@@ -3,7 +3,7 @@ import datetime
 import asyncio
 import json
 
-from app.utils.exchange_rate_converter import convert_currency
+from app.utils.exchange_rate_converter import get_exchange_rate
 
 flights_router = APIRouter(prefix="/api", tags=["flights"])
 
@@ -99,10 +99,17 @@ async def cheapest_round_trip_to_destination(
                 ):
                     return_flights.append(fare)
 
+    # Determine conversion rate if needed
+    # Optimization: Fetch exchange rate once for all combinations instead of for each one
+    conversion_rate = 1.0
+    if outbound_flights and return_flights:
+        out_currency = outbound_flights[0]["price"]["currencyCode"]
+        ret_currency = return_flights[0]["price"]["currencyCode"]
+        if out_currency != ret_currency:
+            conversion_rate = await get_exchange_rate(ret_currency, out_currency)
+
     # Create all valid round trip combinations
-    valid_combinations = []
-    conversion_tasks = []  # may be required
-    conversion_indices = []  # may be required
+    round_trips = []
 
     for outbound in outbound_flights:
         for return_flight in return_flights:
@@ -112,59 +119,22 @@ async def cheapest_round_trip_to_destination(
             # Check minimum travel days constraint
             days_difference = (return_date - outbound_date).days
             if days_difference >= min_travel_days:
-                combination = {
-                    "outbound": outbound,
-                    "return": return_flight,
-                    "travel_days": days_difference,
-                }
+                # Calculate total price with conversion
+                return_price = return_flight["price"]["value"]
+                if conversion_rate != 1.0:
+                    return_price *= conversion_rate
 
-                # Check if currency conversion is needed
-                if (
-                    outbound["price"]["currencyCode"]
-                    != return_flight["price"]["currencyCode"]
-                ):
-                    # Add conversion task
-                    conversion_tasks.append(
-                        convert_currency(
-                            return_flight["price"]["currencyCode"],
-                            outbound["price"]["currencyCode"],
-                            return_flight["price"]["value"],
-                        )
-                    )
-                    conversion_indices.append(len(valid_combinations))
+                total_price = outbound["price"]["value"] + return_price
 
-                valid_combinations.append(combination)
-
-    # Convert currencies if needed (EUR as base)
-    if conversion_tasks:
-        converted_values = await asyncio.gather(*conversion_tasks)
-
-        # Re-apply converted values prices to valid_combinations
-        for idx, converted_value in zip(conversion_indices, converted_values):
-            valid_combinations[idx]["converted_return_value"] = converted_value
-
-    # Calculate and sort total prices
-    round_trips = []
-    for combination in valid_combinations:
-        outbound = combination["outbound"]
-        return_flight = combination["return"]
-
-        if "converted_return_value" in combination:
-            total_price = (
-                outbound["price"]["value"] + combination["converted_return_value"]
-            )
-        else:
-            total_price = outbound["price"]["value"] + return_flight["price"]["value"]
-
-        round_trips.append(
-            {
-                "total_price": total_price,
-                "currency": outbound["price"]["currencyCode"],
-                "travel_days": combination["travel_days"],
-                "outbound": outbound,
-                "return": return_flight,
-            }
-        )
+                round_trips.append(
+                    {
+                        "total_price": total_price,
+                        "currency": outbound["price"]["currencyCode"],
+                        "travel_days": days_difference,
+                        "outbound": outbound,
+                        "return": return_flight,
+                    }
+                )
 
     round_trips.sort(key=lambda x: x["total_price"])
 

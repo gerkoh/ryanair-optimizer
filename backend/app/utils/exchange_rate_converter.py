@@ -5,9 +5,7 @@ import aiohttp
 load_dotenv()
 
 
-async def convert_currency(
-    from_currency: str, to_currency: str, amount: float
-) -> float:
+async def get_exchange_rate(from_currency: str, to_currency: str) -> float:
     API_KEY = os.getenv("EXCHANGE_RATE_API_KEY")
     URL = f"https://v6.exchangerate-api.com/v6/{API_KEY}/pair/{from_currency}/{to_currency}"
     async with aiohttp.ClientSession() as session:
@@ -17,8 +15,14 @@ async def convert_currency(
             data = await response.json()
             if data["result"] != "success":
                 raise ValueError("Failed to fetch exchange rates.")
-            conversion_rate = data["conversion_rate"]
-            return amount * conversion_rate
+            return data["conversion_rate"]
+
+
+async def convert_currency(
+    from_currency: str, to_currency: str, amount: float
+) -> float:
+    conversion_rate = await get_exchange_rate(from_currency, to_currency)
+    return amount * conversion_rate
 
 
 if __name__ == "__main__":
