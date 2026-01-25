@@ -1,0 +1,9 @@
+{% for flight in flights %}
+<card>
+  <h3>
+    {{ flight.destination_code }} - {{ flight.destination_name }} <br />
+    Price: {{ flight.price }} {{ flight.currency }}
+  </h3>
+  <p>Departure: {{ flight.departureDate }}</p>
+</card>
+{% endfor %}

@@ -1,0 +1,6 @@
+{% for flight in flights %}
+<card>
+  <h3>{{ flight.travel_days }} days from {{ flight.outbound.day }} to {{ flight.return.day }}</h3>
+  <p>Price {{ "%.2f"|format(flight.total_price) }} {{ flight.currency }}</p>
+</card>
+{% endfor %}

@@ -1,0 +1,27 @@
+<h1>Minimum travel days:</h1>
+<input type="number" name="min_travel_days" id="min_travel_days" value="{{ min_travel_days }}" 
+       hx-post="/api/update-session-vars" 
+       hx-include="#search-form *" 
+       hx-trigger="change"
+       hx-swap="none" />
+
+<h1>Destination:</h1>
+<select name="destination" id="destination"
+        hx-post="/api/update-session-vars"
+        hx-include="#search-form *"
+        hx-trigger="change"
+        hx-swap="none">
+  {% for dest in destinations %}
+  <option {% if destination == dest.Code %} selected {% endif %} value="{{ dest.Code }}">
+    {{ dest.Code }} - {{ dest.Name }}
+  </option>
+  {% endfor %}
+</select>
+<script>
+document.getElementById('min_travel_days').addEventListener('htmx:afterRequest', function(evt) {
+  document.body.dispatchEvent(new Event('formUpdated'));
+});
+document.getElementById('destination').addEventListener('htmx:afterRequest', function(evt) {
+  document.body.dispatchEvent(new Event('formUpdated'));
+});
+</script>

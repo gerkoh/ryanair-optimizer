@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="static/js/htmx.min.js"></script>
+    <title>Search flights - Ryanair Optimizer</title>
+    <style>
+      .htmx-indicator {
+        opacity: 0;
+      }
+      .htmx-request .htmx-indicator {
+        opacity: 1;
+        transition: opacity 200ms ease-in;
+      }
+      .htmx-request.htmx-indicator {
+        opacity: 1;
+        transition: opacity 200ms ease-in;
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav>
+      <a href="/">Cheapest round trip from a destination</a> |
+      <a href="/get_cheapest_one_way_to_anywhere">Cheapest one way to anywhere</a>
+    </nav>
+    <form id="search-form">
+      <h1>Availability: This month
+
+      <!-- Origin -->
+      <h1 hx-get="/api/all_airports" hx-swap="afterend" hx-trigger="load">Origin:</h1>
+
+      <!-- Destination -->
+      <h2>Destination: Anywhere</h2>
+    </form>
+
+    <div
+      id="search-results"
+      class="search-results"
+      hx-get="/api/search-results/cheapest_one_way_flight_to_anywhere_this_month"
+      hx-trigger="load, formUpdated from:body"
+      hx-target="this"
+      hx-indicator="#spinner"
+    >
+      <div id="spinner" class="htmx-indicator">Loading flights...</div>
+    </div>
+  </body>
+</html>

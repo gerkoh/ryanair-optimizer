@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="static/js/htmx.min.js"></script>
+    <title>Search flights - Ryanair Optimizer</title>
+    <style>
+      .htmx-indicator {
+        opacity: 0;
+      }
+      .htmx-request .htmx-indicator {
+        opacity: 1;
+        transition: opacity 200ms ease-in;
+      }
+      .htmx-request.htmx-indicator {
+        opacity: 1;
+        transition: opacity 200ms ease-in;
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav>
+      <a href="/">Cheapest round trip from a destination</a> |
+      <a href="/get_cheapest_one_way_to_anywhere">Cheapest one way to anywhere</a>
+    </nav>
+    <form id="search-form">
+      <h1>Availability window:</h1>
+      <h2>Start:</h2>
+      <input
+        name="availability_start"
+        id="availability_start"
+        type="date"
+        value="{{ availability.start }}"
+        hx-post="/api/update-session-vars"
+        hx-include="#search-form *"
+        hx-trigger="change"
+        hx-swap="none"
+      />
+      <h2>End:</h2>
+      <input
+        name="availability_end"
+        id="availability_end"
+        type="date"
+        value="{{ availability.end }}"
+        hx-post="/api/update-session-vars"
+        hx-include="#search-form *"
+        hx-trigger="change"
+        hx-swap="none"
+      />
+
+      <!-- Origin -->
+      <h1 hx-get="/api/all_airports" hx-swap="afterend" hx-trigger="load">Origin:</h1>
+
+      <!-- Additional search options -->
+      <div
+        id="search-options"
+        class="search-options"
+        hx-get="/api/search-options/cheapest_round_trip_to_destination"
+        hx-target="this"
+        hx-trigger="load, originChanged from:body"
+      >
+        <h2>Destination: Anywhere</h2>
+      </div>
+    </form>
+
+    <div
+      id="search-results"
+      class="search-results"
+      hx-get="/api/search-results/cheapest_round_trip_to_destination"
+      hx-target="this"
+      hx-trigger="load, formUpdated from:body"
+      hx-indicator="#spinner"
+    >
+      <div id="spinner" class="htmx-indicator">Loading flights...</div>
+    </div>
+  </body>
+  <script>
+    document.getElementById("availability_start").addEventListener("htmx:afterRequest", function (evt) {
+      document.body.dispatchEvent(new Event("formUpdated"));
+    });
+    document.getElementById("availability_end").addEventListener("htmx:afterRequest", function (evt) {
+      document.body.dispatchEvent(new Event("formUpdated"));
+    });
+  </script>
+</html>

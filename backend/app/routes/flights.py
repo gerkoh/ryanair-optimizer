@@ -1,24 +1,40 @@
-from fastapi import APIRouter, Request
+from fastapi import Request
 import datetime
 import asyncio
 import json
 
 from app.utils.exchange_rate_converter import convert_currency
 
-flights_router = APIRouter(prefix="/api", tags=["flights"])
 
-
-@flights_router.get("/destinations")
 async def all_airports(request: Request):
     """
     Get all available airport destinations that Ryanair services.
     """
     results = json.dumps(await request.app.state._ryanairclient.get_all_airports())
-    airport_codes = [airport["code"] for airport in json.loads(results)]
+    airport_codes = [
+        {"Code": airport["code"], "Name": airport["name"]}
+        for airport in json.loads(results)
+    ]
     return airport_codes
 
 
-@flights_router.get("/cheapest-round-trip-to-destination")
+async def destinations_from_airport(origin: str, request: Request):
+    """
+    Get all available destinations from a given origin airport.
+    """
+    results = await request.app.state._ryanairclient.get_destinations_from_airport(
+        origin
+    )
+    destination_codes = [
+        {
+            "Code": destination["arrivalAirport"]["code"],
+            "Name": destination["arrivalAirport"]["name"],
+        }
+        for destination in results
+    ]
+    return destination_codes
+
+
 async def cheapest_round_trip_to_destination(
     origin: str,
     destination: str,
@@ -171,18 +187,20 @@ async def cheapest_round_trip_to_destination(
     return round_trips
 
 
-@flights_router.get("/cheapest-flight-to-anywhere-this-month")
 async def cheapest_one_way_flight_to_anywhere_this_month(origin: str, request: Request):
     """
     Get the cheapest one-way flights from origin to any destination for the current month.
     """
     client = request.app.state._ryanairclient
     destinations = await client.get_destinations_from_airport(origin)
-    destinations = [dest["arrivalAirport"]["code"] for dest in destinations]
+    destinations = [
+        (dest["arrivalAirport"]["code"], dest["arrivalAirport"]["name"])
+        for dest in destinations
+    ]
     today = datetime.date.today()
     tasks = [
         client.get_all_flights_in_month_from_airport_to_airport(
-            origin, today.month, today.year, destination
+            origin, today.month, today.year, destination[0]
         )
         for destination in destinations
     ]
@@ -201,7 +219,8 @@ async def cheapest_one_way_flight_to_anywhere_this_month(origin: str, request: R
                 ):
                     all_flights.append(
                         {
-                            "destination": destination,
+                            "destination_code": destination[0],
+                            "destination_name": destination[1],
                             "day": fare["day"],
                             "departureDate": fare["departureDate"],
                             "arrivalDate": fare["arrivalDate"],
