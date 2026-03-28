@@ -11,4 +11,15 @@ dependencies = [
     "fastapi[standard-no-fastapi-cloud-cli]>=0.128.0",
     "itsdangerous>=2.2.0",
     "pydantic>=2.12.5",
+    "uvicorn>=0.40.0",
 ]
+
+[project.scripts]
+app = "app.__main__:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv]
+package = true

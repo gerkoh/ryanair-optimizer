@@ -16,6 +16,10 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 
 from datetime import datetime
+from pathlib import Path
+
+
+BASE_DIR = Path(__file__).resolve().parent
 
 
 @asynccontextmanager
@@ -37,8 +41,8 @@ app.add_middleware(
     max_age=SESSION_TIME,
 )
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
+templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 
 @app.post("/api/update-session-vars")
