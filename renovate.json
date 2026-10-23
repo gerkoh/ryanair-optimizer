@@ -1,0 +1,28 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "automerge": true,
+  "automergeStrategy": "squash",
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "automerge": true
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true,
+    "schedule": ["before 6am on monday"]
+  },
+  "ignorePaths": ["**/.python-version"],
+  "packageRules": [
+    {
+      "description": "Keep pyproject >= floors stable and move resolved versions in uv.lock.",
+      "matchManagers": ["pep621"],
+      "rangeStrategy": "update-lockfile"
+    },
+    {
+      "description": "Python is selected by .python-version. Do not widen requires-python.",
+      "matchDepTypes": ["requires-python"],
+      "enabled": false
+    }
+  ]
+}
