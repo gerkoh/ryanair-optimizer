@@ -3,6 +3,7 @@
   "extends": ["config:recommended"],
   "automerge": true,
   "automergeStrategy": "squash",
+  "ignoreTests": true,
   "vulnerabilityAlerts": {
     "enabled": true,
     "automerge": true
